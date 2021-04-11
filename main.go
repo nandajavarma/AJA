@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
@@ -21,10 +22,18 @@ import (
 
 var db, _ = gorm.Open("mysql", "root:root@/ajadb?charset=utf8&parseTime=True&loc=Local")
 
+type ItemActivityModel struct {
+	Id         int       `gorm:"primary_key"`
+	Date       time.Time `json:"done_date"`
+	Order      int
+	TodoItemId int `gorm:"index:todo_idx"`
+}
+
 type TodoItemModel struct {
 	Id          int `gorm:"primary_key"`
 	Description string
 	Completed   bool
+	DoneDates   []ItemActivityModel
 }
 
 func getItemByID(Id int) bool {
@@ -35,6 +44,47 @@ func getItemByID(Id int) bool {
 		return false
 	}
 	return true
+}
+
+func addDoneDate(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.FormValue("id"))
+	err := getItemByID(id)
+	if err == false {
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"updated": false, "error": "Record not found"}`)
+	} else {
+		doneDate := r.FormValue("done_date")
+		log.WithFields(log.Fields{"id": id, "Done Date": doneDate}).Info("Updating activity")
+		t, _ := time.Parse("2006-01-02", doneDate)
+		todo := &TodoItemModel{}
+		db.First(&todo, id)
+		activity := &ItemActivityModel{Date: t, Order: id, TodoItemId: id}
+		db.Create(&activity)
+		log.WithFields(log.Fields{"id": todo.Id, "Description": todo.Description}).Info("Updating activity")
+		todo.DoneDates = append(todo.DoneDates, *activity)
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"updated": true}`)
+	}
+}
+
+func getDoneActivities(w http.ResponseWriter, r *http.Request) {
+	// This method returns the list of done activities within a date range
+	t1 := r.FormValue("start_date")
+	t2 := r.FormValue("end_date")
+	startDate, _ := time.Parse("2006-01-02", t1)
+	endDate, _ := time.Parse("2006-01-02", t2)
+	activities := []ItemActivityModel{}
+	log.WithFields(log.Fields{"start_date": startDate, "end_date": endDate}).Info("found activity")
+	db.Where("Date >= ? and Date <= ?", startDate, endDate).Find(&activities)
+	// db.Find(&activities)
+	response := []string{}
+	for _, activity := range activities {
+		todo := &TodoItemModel{}
+		db.First(&todo, activity.TodoItemId)
+		response = append(response, todo.Description)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func updateItem(w http.ResponseWriter, r *http.Request) {
@@ -125,6 +175,8 @@ func newRouter() *mux.Router {
 	r.HandleFunc("/todo-incomplete", getIncompleteItems).Methods("Get")
 	r.HandleFunc("/todo/{id}", updateItem).Methods("POST")
 	r.HandleFunc("/todo/{id}", deleteItem).Methods("DELETE")
+	r.HandleFunc("/todo-activity/{id}", addDoneDate).Methods("POST")
+	r.HandleFunc("/done-activities", getDoneActivities).Methods("POST")
 	return r
 
 }
@@ -137,9 +189,11 @@ func init() {
 func main() {
 	defer db.Close()
 
-	db.Debug().DropTableIfExists(&TodoItemModel{}) // I doubt if this is a good practice
+	// db.Debug().DropTableIfExists(&TodoItemModel{}) // I doubt if this is a good practice
 	db.Debug().AutoMigrate(&TodoItemModel{})
 
+	// db.Debug().DropTableIfExists(&ItemActivityModel{}) // I doubt if this is a good practice
+	db.Debug().AutoMigrate(&ItemActivityModel{})
 	log.Info("Starting AJA API server")
 	r := newRouter()
 	handler := cors.New(cors.Options{

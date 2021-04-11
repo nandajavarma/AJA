@@ -2,32 +2,47 @@ var server = "http://localhost:8080/";
 var todolist_server = server + "todo"
 
 function getCompletedTodos(){
-	var result = null
-	$.ajax({
-		type: "GET",
-		url: server + "todo-completed",
-	        async: false,
-		success: function(data){
-			result = data;
-		}
-	});
-	return result;
+  var result = null
+  $.ajax({
+    type: "GET",
+    url: server + "todo-completed",
+    async: false,
+    success: function(data){
+      result = data;
+    }
+  });
+  return result;
 }
 
 function getIncompleteTodos(){
-	var result = null
-	$.ajax({
-		type: "GET",
-		url: server + "todo-incomplete",
-	        async: false,
-		success: function(data){
-			result = data;
-		}
-	});
-	return result;
+  var result = null
+  $.ajax({
+    type: "GET",
+    url: server + "todo-incomplete",
+    async: false,
+    success: function(data){
+      result = data;
+    }
+  });
+  return result;
 }
 
-var data = {todo: getIncompleteTodos() || [] , completed: getCompletedTodos() || []};
+function getDoneActivities(startDate, endDate){
+  var result = null
+  payload = {"start_date": startDate, "end_date": endDate};
+  $.ajax({
+    type: "POST",
+    url: server + "done-activities",
+    data: payload,
+    async: false,
+    success: function(data){
+      result = data;
+    }
+  });
+  return result;
+}
+
+var data = {todo: getIncompleteTodos() || [] , completed: getCompletedTodos() || [], done: getDoneActivities() || []};
 console.log(data);
 
 // Remove and complete icons in SVG format
@@ -61,21 +76,55 @@ function addItem (value) {
   data.todo.push(value);
 }
 
+$("li").on("dblclick", function() {
+  console.log("TODO has been clicked");
+  value = $(this).get(0)
+  if (value) {
+    console.log(value.id);
+    const today = new Date().toISOString().split("T")[0]
+    addDoneActivity(value.id, today)
+  }
+});
+
+function addDoneActivity(id, date) {
+  var result = addDoneActivityToBackend(id, date);
+  console.log(result);
+  // TODO update the view
+  
+}
+
+function addDoneActivityToBackend(id, date) {
+  var result = null;
+  payload = {'id': id, 'done_date': date};
+  console.log(payload);
+  $.ajax({
+    type: "POST",
+    url: server + "todo-activity/" + id,
+    data: payload,
+    async: false,
+    success: function(data){
+      result = data;
+      console.log(data);
+    }
+  });
+  return result;
+}
+
 function addItemToBackend (value) {
-	var result = null;
-	payload = {'description': value};
-	console.log(payload);
-	$.ajax({
-                type: "POST",
-                url: todolist_server,
-		data: payload,
-		async: false,
-                success: function(data){
-                        result = data;
-			console.log(data);
-                }
-        });
-        return result.Id;
+  var result = null;
+  payload = {'description': value};
+  console.log(payload);
+  $.ajax({
+    type: "POST",
+    url: todolist_server,
+    data: payload,
+    async: false,
+    success: function(data){
+      result = data;
+      console.log(data);
+    }
+  });
+  return result.Id;
 }
 
 function renderTodoList() {
@@ -110,15 +159,15 @@ function removeItem() {
 }
 
 function removeItemInBackend (item) {
-	console.log(item.id)
-	$.ajax({
-                url: todolist_server + "/" + item.id,
-		type: 'DELETE',
-		async: false,
-		success: function(data) {
-			console.log(data)
-		}
-        });
+  console.log(item.id)
+  $.ajax({
+    url: todolist_server + "/" + item.id,
+    type: 'DELETE',
+    async: false,
+    success: function(data) {
+      console.log(data)
+    }
+  });
 }
 
 function completeItem() {
@@ -130,12 +179,12 @@ function completeItem() {
   if (id === 'todo') {
     data.todo.splice(data.todo.indexOf(value), 1);
     data.completed.push(value);
-	console.log(item);
+    console.log(item);
     updateItemInBackend(item, true);
   } else {
     data.completed.splice(data.completed.indexOf(value), 1);
     data.todo.push(value);
-	console.log(item);
+    console.log(item);
     updateItemInBackend(item, false);
   }
   // Check if the item should be added to the completed list or to re-added to the todo list
@@ -146,17 +195,17 @@ function completeItem() {
 }
 
 function updateItemInBackend (item, completed) {
-        console.log(item.id)
-	payload = {'completed': completed};
-        $.ajax({
-                url: todolist_server + "/" + item.id,
-                type: 'POST',
-		data: payload,
-                async: false,
-                success: function(data) {
-                        console.log(data)
-                }
-        });
+  console.log(item.id)
+  payload = {'completed': completed};
+  $.ajax({
+    url: todolist_server + "/" + item.id,
+    type: 'POST',
+    data: payload,
+    async: false,
+    success: function(data) {
+      console.log(data)
+    }
+  });
 }
 
 
@@ -191,3 +240,52 @@ function addItemToDOM(text, id, completed) {
 
   list.insertBefore(item, list.childNodes[0]);
 }
+
+ Date.prototype.addDays = function(days) {
+        var dat = new Date(this.valueOf())
+        dat.setDate(dat.getDate() + days);
+        return dat;
+
+    }
+
+    function getDates(startDate, stopDate) {
+        var dateArray = new Array();
+        var currentDate = startDate;
+        while (currentDate <= stopDate) {
+            dateArray.push(currentDate)
+            currentDate = currentDate.addDays(1);
+        }
+        return dateArray;
+    }
+
+    var dateArray = getDates(new Date(), (new Date()).addDays(6));
+    var dict = new Object();
+
+
+    var head_row = document.createElement("tr");
+    head_row.className = "row m-0"
+    dateArray.forEach(function(item) {
+        var cell = document.createElement("td");
+        var today = item.toISOString().split("T")[0];
+        cell.textContent = today;
+        cell.className = today;
+        var column = document.createElement("td");
+        column.className = "d-inline-block col-3"
+        var activities = getDoneActivities(today, today)
+        dict[today] = activities;
+        activities.forEach(function(act) {
+          var data = document.createElement("tr");
+          data.textContent = act;
+          column.appendChild(data);
+          cell.appendChild(column)
+        });
+        head_row.appendChild(cell);
+    });
+
+    $('table tbody').append(head_row);
+console.log(dict)
+
+
+    var todaysDate = new Date();
+    
+    $("td").first().css("background", "yellow");

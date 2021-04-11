@@ -12,6 +12,9 @@
         
 		<!-- Roboto font embed -->
 		<link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+		<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 
 		<!-- Stylesheets -->
 		<link rel="stylesheet" type="text/css" href="resources/css/reset.min.css">
@@ -27,11 +30,24 @@
 		</header>
 
 		<div class="container">
-			<!-- Uncompleted tasks -->
-			<ul class="todo" id="todo"></ul>
+			<div class="section group">
+				<div class="col span_1_of_3">
+					<!-- Uncompleted tasks -->
+					<ul class="todo" id="todo"></ul>
 
-			<!-- Completed tasks -->
-			<ul class="todo" id="completed"></ul>
+					<!-- Completed tasks -->
+					<ul class="todo" id="completed"></ul>
+				</div>
+
+				<div class="col span_2_of_3">
+					<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+					<table class="table">
+						<tbody class="thead-dark">
+						</thead>
+					</table>
+				</div>
+			</div>
+
 		</div>
 
 		<!-- JavaScripts -->

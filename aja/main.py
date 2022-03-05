@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
-from flask import Flask
+from flask import Blueprint, render_template, request
+from . import db
+from flask_login import login_required, current_user
+import logging
 
-app = Flask(__name__)
+main = Blueprint('main', __name__)
 
-@app.route("/home")
-def hello_world():
-    return "<p>Hello, World!</p>"
+@main.route('/')
+def index():
+    logging.warn(request.endpoint)
+    return render_template("index.html")
+
+@main.route('/profile')
+@login_required
+def profile():
+    return render_template("profile.html", name=current_user.name)

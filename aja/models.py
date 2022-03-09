@@ -62,6 +62,20 @@ class Task(db.Model, CRUDMixin):
     def event_counts(self):
         return len(self.events)
 
+    @property
+    def event_duration(self):
+
+        # Looking for one with the timestamp within the last day.
+        date = datetime.today().date()
+        for event_elem in self.events:
+            if event_elem.created_on.date() == date:
+                return event_elem.event_duration
+
+        # If we get here the element is not found, returning zero
+        return 0
+
 class Event(db.Model, CRUDMixin):
     __tablename__ = "events"
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'))
+    event_duration = db.Column(db.Float)
+

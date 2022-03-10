@@ -20,6 +20,7 @@
         <td>{{ task.title }}</td>
         <td>{{ task.event_duration }} Hours</td>
         <td><form action="{{ url_for('task.handle_add_event')}}" method="POST"><input name="text" type="hidden" value="{{ task.id }}"><input type="submit" value="Add 30 Minutes"></form></td>
+        <td><form action="{{ url_for('task.handle_reduce_event')}}" method="POST"><input name="text" type="hidden" value="{{ task.id }}"><input type="submit" value="Remove 30 Minutes"></form></td>
     </tr>
     {% endfor %}
 </tbody>

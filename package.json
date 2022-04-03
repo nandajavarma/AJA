@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "webtorrent": "^1.8.4"
+  }
+}

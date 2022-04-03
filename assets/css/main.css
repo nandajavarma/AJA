@@ -1,0 +1,14 @@
+
+       .nav-link {
+            color: green;
+        }
+
+        .nav-item>a:hover {
+            color: green;
+        }
+
+        /*code to change background color*/
+        .navbar-item>.active {
+            background-color: #C0C0C0;
+            color: green;
+        }

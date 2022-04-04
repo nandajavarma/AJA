@@ -8,7 +8,7 @@ from flask_migrate import Migrate
 db = SQLAlchemy()
 
 def create_app():
-    app = Flask(__name__, template_folder="../templates", static_folder="../assets")
+    app = Flask(__name__, static_url_path="/", static_folder="../frontend/build")
 
     app.config['SECRET_KEY'] = 'secret-key-goes-here'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///aja.db'

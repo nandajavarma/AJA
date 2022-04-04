@@ -8,10 +8,13 @@ main = Blueprint('main', __name__)
 
 @main.route('/')
 def index():
-    logging.warn(request.endpoint)
-    return render_template("index.html")
+    return app.send_static_file("index.html")
 
 @main.route('/profile')
 @login_required
 def profile():
-    return render_template("profile.html", name=current_user.name)
+    return app.send_static_file("profile.html", name=current_user.name)
+
+@main.route('/hello')
+def hello():
+    return {"result": "Hello world"}
